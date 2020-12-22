@@ -1,3 +1,1 @@
-"# MayaPipelineTool" 
-"# MayaPipelineTool" 
-"# MayaPipelineTool" 
+"# MayaPipelineTool"
