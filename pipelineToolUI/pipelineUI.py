@@ -64,14 +64,7 @@ class PipelineUI(QtWidgets.QMainWindow):
         # Set the main layout to the main widget.
         self.mainWidget.setLayout(self.mainLayout)
         self.setCentralWidget(self.mainWidget)
-    '''
-    def createLocator(self):
-        if(_IN_MAYA_ == True):
-            nameLoc = self.line.text()
-            cmds.spaceLocator(name = nameLoc)
-        else:
-            print("IL VEUT PAS")
-    '''
+
 
     def layoutBase(self):
         # Create the main Widget.
