@@ -1,6 +1,6 @@
 
 from Qt import QtWidgets, QtCore, QtGui
-
+from pipelineToolUI.separation_line import QVSeperationLine
 _IN_MAYA_ = False
 
 try:
@@ -64,7 +64,14 @@ class PipelineUI(QtWidgets.QMainWindow):
         # Set the main layout to the main widget.
         self.mainWidget.setLayout(self.mainLayout)
         self.setCentralWidget(self.mainWidget)
-
+    '''
+    def createLocator(self):
+        if(_IN_MAYA_ == True):
+            nameLoc = self.line.text()
+            cmds.spaceLocator(name = nameLoc)
+        else:
+            print("IL VEUT PAS")
+    '''
 
     def layoutBase(self):
         # Create the main Widget.
@@ -113,19 +120,35 @@ class PipelineUI(QtWidgets.QMainWindow):
 
         # Create line edit for path.
         self.pathLineEdit = QtWidgets.QLineEdit()
-
-        self.spliter1 = QtWidgets.QFrame()
+        self.pathLineEdit.setFixedSize(300, 32)
+        self.QVLineShape()
+        #self.spliter1 = QVSeperationLine()
         # Add the widgets to the teamLayout.
         self.teamLayout.addWidget(self.teamLabel, 0, QtCore.Qt.AlignRight)
         self.teamLayout.addWidget(self.comboBoxTeam)
         self.teamLayout.addWidget(self.checkBoxLock)
-        self.teamLayout.addWidget(self.spliter1)
+        self.teamLayout.addWidget(self.vLine)
         self.teamLayout.addWidget(self.localCheckBox)
         self.teamLayout.addWidget(self.pathLabel)
         self.teamLayout.addWidget(self.pathLineEdit)
 
         # Add the layout to the widget.
         self.teamWidget.setLayout(self.teamLayout)
+
+    def QVLineShape(self):
+        self.vLine = QtWidgets.QFrame()
+        self.vLine.setFixedWidth(50)
+        self.vLine.setMinimumHeight(1)
+        self.vLine.setFrameShape(QtWidgets.QFrame.VLine)
+        self.vLine.setFrameShadow(QtWidgets.QFrame.Sunken)
+
+    def QHLineShape(self):
+        self.hLine = QtWidgets.QFrame()
+        self.hLine.setFixedWidth(50)
+        self.hLine.setMinimumHeight(1)
+        self.hLine.setFrameShape(QtWidgets.QFrame.HLine)
+        self.hLine.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.hLine.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
 
     def searchAndDropWidget(self):
         # Create the searchNDrop widget.
@@ -423,6 +446,7 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.exportButtonWidget = QtWidgets.QWidget()
         # Create the export buttons layout.
         self.exportButtonLayout = QtWidgets.QHBoxLayout(self.exportButtonWidget)
+        self.exportButtonLayout.setSpacing(30)
 
         # Create the QPushButton widgets.
         self.taskPushButton = QtWidgets.QPushButton('Tasks')
