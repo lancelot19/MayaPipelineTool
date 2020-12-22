@@ -24,9 +24,12 @@ class PipelineUI(QtWidgets.QMainWindow):
         # Set the window title.
         self.setWindowTitle('Pipeline Tool')
         # Set the window size.
-        self.setMinimumSize(1000, 900)
+        self.setMinimumSize(1050, 900)
+        self.setMaximumSize(1050, 900)
 
         self.layoutBase()
+
+        self.localPathWidget()
 
         # Compute the team lock layout function.
         self.teamLockWidget()
@@ -48,6 +51,7 @@ class PipelineUI(QtWidgets.QMainWindow):
 
         self.chilWidget1.setLayout(self.childLayout1)
         
+        self.childLayout2.addWidget(self.localWidget)
         self.childLayout2.addWidget(self.attribVWidget)
         self.childLayout2.addWidget(self.exportSceneNameVWidget)
         self.childLayout2.addWidget(self.exportMainWidget)
@@ -94,6 +98,25 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.chilWidget1.setLayout(self.childLayout1)
         self.chilWidget2.setLayout(self.childLayout2)
 
+    def localPathWidget(self):
+        self.localWidget = QtWidgets.QWidget()
+        self.localLayout = QtWidgets.QHBoxLayout(self.localWidget)
+        self.localLayout.setContentsMargins(0, 20, 10, 0)
+
+        self.localLayout.setSpacing(5)
+        self.pathLabel = QtWidgets.QLabel('Path :')
+        self.localCheckBox = QtWidgets.QCheckBox('Local')
+
+        # Create line edit for path.
+        self.pathLineEdit = QtWidgets.QLineEdit()
+        self.pathLineEdit.setFixedSize(300, 32)
+
+        self.localLayout.addWidget(self.localCheckBox, 0, QtCore.Qt.AlignRight)
+        self.localLayout.addWidget(self.pathLabel, 0, QtCore.Qt.AlignRight)
+        self.localLayout.addWidget(self.pathLineEdit)
+
+        self.localWidget.setLayout(self.localLayout)
+
     def teamLockWidget(self):
         # Create the team widget.
         self.teamWidget = QtWidgets.QWidget()
@@ -106,7 +129,7 @@ class PipelineUI(QtWidgets.QMainWindow):
         
         # Create and set the team QLabel.
         self.teamLabel = QtWidgets.QLabel('Team :')
-        self.pathLabel = QtWidgets.QLabel('Path :')
+        
 
         # Create and set the comboBox Team.
         self.comboBoxTeam = QtWidgets.QComboBox()
@@ -116,39 +139,20 @@ class PipelineUI(QtWidgets.QMainWindow):
         
         # Create and set the checkBox Lock.
         self.checkBoxLock = QtWidgets.QCheckBox('Lock')
-        self.localCheckBox = QtWidgets.QCheckBox('Local')
+        
 
-        # Create line edit for path.
-        self.pathLineEdit = QtWidgets.QLineEdit()
-        self.pathLineEdit.setFixedSize(300, 32)
+
         self.QVLineShape()
-        #self.spliter1 = QVSeperationLine()
+        self.vLine.setFixedWidth(15)
+
         # Add the widgets to the teamLayout.
         self.teamLayout.addWidget(self.teamLabel, 0, QtCore.Qt.AlignRight)
         self.teamLayout.addWidget(self.comboBoxTeam)
         self.teamLayout.addWidget(self.checkBoxLock)
         self.teamLayout.addWidget(self.vLine)
-        self.teamLayout.addWidget(self.localCheckBox)
-        self.teamLayout.addWidget(self.pathLabel)
-        self.teamLayout.addWidget(self.pathLineEdit)
 
         # Add the layout to the widget.
         self.teamWidget.setLayout(self.teamLayout)
-
-    def QVLineShape(self):
-        self.vLine = QtWidgets.QFrame()
-        self.vLine.setFixedWidth(50)
-        self.vLine.setMinimumHeight(1)
-        self.vLine.setFrameShape(QtWidgets.QFrame.VLine)
-        self.vLine.setFrameShadow(QtWidgets.QFrame.Sunken)
-
-    def QHLineShape(self):
-        self.hLine = QtWidgets.QFrame()
-        self.hLine.setFixedWidth(50)
-        self.hLine.setMinimumHeight(1)
-        self.hLine.setFrameShape(QtWidgets.QFrame.HLine)
-        self.hLine.setFrameShadow(QtWidgets.QFrame.Sunken)
-        self.hLine.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
 
     def searchAndDropWidget(self):
         # Create the searchNDrop widget.
@@ -184,6 +188,11 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.searchNDropWidget.setLayout(self.searchNDropLayout)
 
     def attribUIWidget(self):
+
+        self.QHLineShape()
+        self.hLine.setFixedWidth(540)
+        self.hLine.setMinimumHeight(10)
+
         # Create the attrib widget.
         self.attribWidget = QtWidgets.QWidget()
         self.attribVWidget = QtWidgets.QWidget()
@@ -200,7 +209,7 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.attribChoiceLayout.setContentsMargins(0, 0, 5, 5)
 
         self.attribVLayout = QtWidgets.QVBoxLayout(self.chilWidget2)
-        self.attribVLayout.setContentsMargins(0, 60, 5, 5)
+        self.attribVLayout.setContentsMargins(0, 12, 5, 5)
 
         # Create and set attribute labels.
         self.attribLabel = QtWidgets.QLabel('Attributes :')
@@ -256,6 +265,7 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.attribVLayout.addWidget(self.attribTypeWidget)
         self.attribVLayout.addWidget(self.attribChoiceWidget)
         self.attribVLayout.addWidget(self.attribWidget)
+        self.attribVLayout.addWidget(self.hLine)
 
         self.attribVWidget.setLayout(self.attribVLayout)
 
@@ -276,13 +286,15 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.exportSceneName()
         self.exportChild1()
         self.exportChild2()
-
+        self.QVLineShape()
+        self.vLine.setMinimumHeight(1)
         # Create the main export layout.
         self.exportMainLayout = QtWidgets.QHBoxLayout(self.exportMainWidget)
         self.exportMainLayout.setContentsMargins(0, 0, 5, 0)
 
         # Add child widgets to the main export layout.
         self.exportMainLayout.addWidget(self.exportChildWidget1)
+        self.exportMainLayout.addWidget(self.vLine)
         self.exportMainLayout.addWidget(self.exportChildWidget2)
 
         # Set main layout to the main export widget.
@@ -329,11 +341,11 @@ class PipelineUI(QtWidgets.QMainWindow):
 
         # Create the child1 export layout.
         self.exportChildLayout1 = QtWidgets.QVBoxLayout(self.exportChildWidget1)
-        self.exportChildLayout1.setContentsMargins(20, 0, 80, 45)
+        self.exportChildLayout1.setContentsMargins(50, 0, 0, 45)
 
         # Create checkBoxes.
-        self.checkExportOBJ = QtWidgets.QCheckBox('.OBJ')
-        self.checkExportMA = QtWidgets.QCheckBox('.Ma')
+        self.checkExportOBJ = QtWidgets.QCheckBox('.Ma')
+        self.checkExportMA = QtWidgets.QCheckBox('.Obj')
         self.checkExportABC = QtWidgets.QCheckBox('.Abc')
 
         # Add Widgets to the child layouts.
@@ -460,6 +472,23 @@ class PipelineUI(QtWidgets.QMainWindow):
 
         # Add the layout to the widget.
         self.exportButtonWidget.setLayout(self.exportButtonLayout)
+
+    def QVLineShape(self):
+        self.vLine = QtWidgets.QFrame()
+        self.vLine.setFixedWidth(50)
+        self.vLine.setMinimumHeight(40)
+        self.vLine.setLineWidth(2)
+        self.vLine.setFrameShape(QtWidgets.QFrame.VLine)
+        self.vLine.setFrameShadow(QtWidgets.QFrame.Plain)
+
+    def QHLineShape(self):
+        self.hLine = QtWidgets.QFrame()
+        self.hLine.setFixedWidth(50)
+        self.hLine.setMinimumHeight(40)
+        self.hLine.setLineWidth(2)
+        self.hLine.setFrameShape(QtWidgets.QFrame.HLine)
+        self.hLine.setFrameShadow(QtWidgets.QFrame.Plain)
+        self.hLine.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
 
     def clickMeClicked(self):
 
