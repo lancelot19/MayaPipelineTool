@@ -1,8 +1,6 @@
 
 from Qt import QtWidgets, QtCore, QtGui
 
-from pipelineToolUI.mayaAttributes import *
-
 _IN_MAYA_ = False
 
 try:
@@ -12,33 +10,62 @@ except:
     pass
 
 
+class Worker(QtCore.QThread):
+
+    def __init__(self):
+        super(Worker, self).__init__()
+
+        #self.threadPool = QtCore.QThreadPool.globalInstance()
+
+    def run(self):
+        """Long-running Tasks.
+        """
+        self.pipeline = PipelineUI()
+        self.pipeline.adjust_root_index()
+        self.pipeline.onTextChanged()
+        #print(self.threadPool.activeThreadCount())
+
 class PipelineUI(QtWidgets.QMainWindow):
 
     def __init__(self, parent = None, **kwargs):
         # Init this class with the parent class init.
         super(PipelineUI, self).__init__(parent = parent)
-
+        '''
+        self.threadPool = QtCore.QThreadPool.globalInstance()
+        self.threadPool.setMaxThreadCount(6)
+        print("Multithreading with maximum %d threads" % self.threadPool.maxThreadCount())
+        '''
         self.initUI()
-        
+        self.worker.start()
+    '''
+    def processData(self):
+        self.workerThread = WorkerThread()
+        self.threadPool.start(self.workerThread)
+        print(self.threadPool.activeThreadCount())
+        print("Done !")
+
+    def closeEvent(self, event):
+        self.threadPool.waitForDone()
+        event.accept()
+    '''
     def initUI(self):
         """Create the widget interface.
         """
-        self.mayaAttrib = MayaAttributes()
+        
         # Set the window title.
         self.setWindowTitle('Pipeline Tool')
         # Set the window size.
         self.setMinimumSize(1050, 900)
         self.setMaximumSize(1050, 900)
 
-        ### Compute the different Widgets of the UI. ###
         self.layoutBase()
 
         self.localPathWidget()
 
-        # Compute the team lock layout widget.
+        # Compute the team lock layout function.
         self.teamLockWidget()
 
-        # Compute the searchAndDropLayout widget.
+        # Compute the searchAndDropLayout function.
         self.searchAndDropWidget()
 
         self.attribUIWidget()
@@ -48,8 +75,7 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.attribExport()
 
         self.exportButtons()
-
-        ### Add widgets to child widgets. ###
+        # Add widgets to child widgets
 
         self.childLayout1.addWidget(self.teamWidget)
         self.childLayout1.addWidget(self.searchNDropWidget)
@@ -73,14 +99,41 @@ class PipelineUI(QtWidgets.QMainWindow):
         # Set the main layout to the main widget.
         self.mainWidget.setLayout(self.mainLayout)
         self.setCentralWidget(self.mainWidget)
+    '''
+    def createLocator(self):
+        if(_IN_MAYA_ == True):
+            nameLoc = self.line.text()
+            cmds.spaceLocator(name = nameLoc)
+        else:
+            print("IL VEUT PAS")
+    '''
+
+    def runLongTask(self):
+
+        self.thread = QtCore.QThread()
+
+        self.worker = Worker()
+
+        self.worker.moveToThread(self.thread)
+
+        self.thread.started.connect(self.worker.run)
+
+        self.worker.finished.connect(self.thread.quit)
+
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+
+        
+        self.thread.start()
+        self.thread.wait()
+        self.worker.wait()
+
+        #self.searchTreeView.setRootIndex(self.worker.proxyIndex)
+        #self.worker.progress.connect(self.reportProgress)
 
     def layoutBase(self):
-        """Create the main and the two children base layouts.
-        """
-
         # Create the main Widget.
         self.mainWidget = QtWidgets.QWidget()
-
         # Create the main Layout.
         self.mainLayout = QtWidgets.QHBoxLayout()
         self.mainLayout.setContentsMargins(0, 0, 0, 0)
@@ -88,7 +141,6 @@ class PipelineUI(QtWidgets.QMainWindow):
         # Create the child widgets.
         self.chilWidget1 = QtWidgets.QWidget()
         self.chilWidget2 = QtWidgets.QWidget()
-
         # Create the child Layouts.
         self.childLayout1 = QtWidgets.QVBoxLayout()
         self.childLayout1.setContentsMargins(0, 0, 0, 0)
@@ -96,13 +148,11 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.childLayout2.setContentsMargins(0, 0, 0, 0)
 
         # Set the child layouts to the child widgets.
+
         self.chilWidget1.setLayout(self.childLayout1)
         self.chilWidget2.setLayout(self.childLayout2)
 
     def localPathWidget(self):
-        """Creating the local path Widget to have the possibility to work on a local tree structure.
-        """
-
         self.localWidget = QtWidgets.QWidget()
         self.localLayout = QtWidgets.QHBoxLayout(self.localWidget)
         self.localLayout.setContentsMargins(0, 20, 10, 0)
@@ -127,8 +177,6 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.localCheckBox.stateChanged.connect(lambda:self.searchNDropInteract())
 
     def localPathInteract(self):
-        """Here is the condition to set the local path if we check the checkbox 'local'.
-        """
 
         if(self.localCheckBox.isChecked() == True):
             self.localPath = self.pathLineEdit.text()
@@ -138,9 +186,6 @@ class PipelineUI(QtWidgets.QMainWindow):
             self.pathLineEdit.setEnabled(True)
 
     def teamLockWidget(self):
-        """Creating the team lock Widget. We can change the team name and lock it.
-        If the team name changes, the server path is changed to point on the team tree structure.
-        """
 
         # Create the team widget.
         self.teamWidget = QtWidgets.QWidget()
@@ -179,12 +224,11 @@ class PipelineUI(QtWidgets.QMainWindow):
         # Add the layout to the widget.
         self.teamWidget.setLayout(self.teamLayout)
 
+
+
         self.comboBoxTeam.activated[str].connect(self.searchNDropInteract)
 
     def teamLockInteract(self):
-        """Here is the condition to lock the possibility to change the team name.
-        """
-
         self.comboBoxTeam.setEnabled(False)
         if(self.checkBoxLock.isChecked() == True):
             self.comboBoxTeam.setEnabled(False)
@@ -192,10 +236,6 @@ class PipelineUI(QtWidgets.QMainWindow):
             self.comboBoxTeam.setEnabled(True)
 
     def searchAndDropWidget(self):
-        """Creating the search and drop widget.
-        We can use it to search folders and files in the path of the tree structure and drag/drop files in the software.
-        """
-
         self.QHLineShape()
         self.hLine.setFixedWidth(474)
         self.hLine.setMinimumHeight(7)
@@ -228,15 +268,8 @@ class PipelineUI(QtWidgets.QMainWindow):
         
 
     def searchNDropInteract(self):
-        """Here is the search and drop interaction code.
-        We use condition to set the path and the QTreeview point on this path.
-        After we define the model of the QTreeview and we use Filters and Sort filter proxy model
-        to search in the tree structure.
-        """
-
         # Get the current index of the team.
         self.teamIdx = self.comboBoxTeam.currentIndex()
-
         # Condition to determine the server or local path.
         if(self.localCheckBox.isChecked() == True):
             self.path = self.localPath
@@ -250,6 +283,7 @@ class PipelineUI(QtWidgets.QMainWindow):
 
         # Define the file system model.
         self.model = QtWidgets.QFileSystemModel(self.searchTreeView)
+        #self.searchTreeView.setSortingEnabled(True)
 
         # Set the root path.
         self.model.setRootPath(self.path)
@@ -264,27 +298,21 @@ class PipelineUI(QtWidgets.QMainWindow):
 
         # Set the model, the root index and the drop possibility.
         self.searchTreeView.setModel(self.proxyModel)
-
         self.adjust_root_index()
-
+        self.worker = Worker()
+        #self.worker.start()
         self.searchTreeView.setAcceptDrops(True)
         self.searchTreeView.setDragDropOverwriteMode(True)
         self.searchTreeView.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
         
 
     def onTextChanged(self):
-        """This function allows to expand or collapse all the tree structure
-        with as condition the fact to write or not in the search line edit.
-        """
-
         self.text = self.searchLineEdit.text()
         if(self.text != ""):
             self.searchTreeView.expandAll()
         else:
             self.searchTreeView.collapseAll()
-
         self.proxyModel.setFilterWildcard("*{}*".format(self.text))
-
         self.adjust_root_index()
 
     def adjust_root_index(self):
@@ -293,10 +321,14 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.proxyIndex = self.proxyModel.mapFromSource(self.rootIndex)
         self.searchTreeView.setRootIndex(self.proxyIndex)
         
+        '''
+        self.worker = WorkerThread()
+        self.worker.setAutoDelete(True)
+        self.threadPool.globalInstance().start(self.worker)
+        print(self.threadPool.activeThreadCount())
+        '''
+        
     def attribUIWidget(self):
-        """Creating the attribute Widget.
-        This widget can add or delete different type of attributes on transforms and shapes in maya.
-        """
 
         self.QHLineShape()
         self.hLine.setFixedWidth(540)
@@ -330,7 +362,7 @@ class PipelineUI(QtWidgets.QMainWindow):
         # Create attrib edit line.
         self.attribLineEdit = QtWidgets.QLineEdit()
         self.attribNameLineEdit = QtWidgets.QLineEdit()
-        #self.attribNameLineEdit.setText('GuerillaTags')
+        self.attribNameLineEdit.setText('GuerillaTags')
         # Create the combo box to choose transform or shape attribute.
         self.comboBoxAttribTS = QtWidgets.QComboBox()
         self.comboBoxAttribTS.addItem('Shape')
@@ -379,28 +411,16 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.attribVWidget.setLayout(self.attribVLayout)
 
         # Connect attrib type to attribName line edit.
-        self.comboBoxAttribTS.activated[str].connect(self.determineAttribName)        
-        self.attribNameLineEdit.textChanged.connect(self.mayaInteract)
-        self.attribLineEdit.textChanged.connect(self.mayaInteract)
-        self.comboBoxAttribType.activated[str].connect(self.mayaInteract)
-        
-    
-    def determineAttribName(self):
-        """Here is a basic automation to define two currently used attributes 'GuerillaTags' and 'variant'
-        when we choose a transform or a shape attribute.
-        """
+        self.comboBoxAttribTS.activated[str].connect(self.determineAttribName)
 
+    def determineAttribName(self):
         self.idx = self.comboBoxAttribTS.currentIndex()
         if(self.idx == 0):
             self.attribNameLineEdit.setText('GuerillaTags')
         else:
             self.attribNameLineEdit.setText('variant')
-    
-    def exportUIWidget(self):
-        """Creating the export bases widget
-        and call the other functions to complete the widget.
-        """
 
+    def exportUIWidget(self):
         # Create the main export widget.
         self.exportMainWidget = QtWidgets.QWidget()
 
@@ -421,11 +441,8 @@ class PipelineUI(QtWidgets.QMainWindow):
         # Set main layout to the main export widget.
         self.exportMainWidget.setLayout(self.exportMainLayout)
 
-    def exportSceneName(self):     
-        """ Here is the export scene name function.
-        This create all the scene name part of the export widget.
-        """
-
+    def exportSceneName(self):
+        
         self.QHLineShape()
         self.hLine.setMinimumHeight(0)
         self.hLine.setFixedWidth(540)
@@ -466,10 +483,6 @@ class PipelineUI(QtWidgets.QMainWindow):
 
 
     def exportChild1(self):
-        """This function creates the file type choice that we want to export
-        with the export widget.
-        """
-
         # Create the child1 exports widget.
         self.exportChildWidget1 = QtWidgets.QWidget()
 
@@ -492,8 +505,6 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.exportChildWidget1.setLayout(self.exportChildLayout1)
 
     def exportChild2(self):
-        """This function creates the alembic options part of the export widget.
-        """
 
         self.alembicOptions()
 
@@ -541,8 +552,6 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.exportChildWidget2.setLayout(self.exportChildLayout2)
 
     def alembicOptions(self):
-        """This function set the alembic options of the export widget.
-        """
 
         # Creates the Labels.
         self.alembicOptionsLabel = QtWidgets.QLabel('Alembic Options :')
@@ -567,10 +576,6 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.endSubSLineEdit.setText('0.2')
 
     def attribExport(self):
-        """This function creates the export attributes widget.
-        With this widget we can choose what attributes we want to export in the alembic.
-        """
-
         # Create the widget.
         self.attribExportWidget = QtWidgets.QWidget()
 
@@ -596,13 +601,8 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.attribExportWidget.setLayout(self.attribExportLayout)
 
     def exportButtons(self):
-        """This function creates the export buttons widget.
-        We have two buttons, one for 'Tasks exports' and another for 'publishs exports'.
-        """
-
         # Create the export buttons widget.
         self.exportButtonWidget = QtWidgets.QWidget()
-
         # Create the export buttons layout.
         self.exportButtonLayout = QtWidgets.QHBoxLayout(self.exportButtonWidget)
         self.exportButtonLayout.setSpacing(30)
@@ -621,9 +621,6 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.exportButtonWidget.setLayout(self.exportButtonLayout)
 
     def QVLineShape(self):
-        """This function creates a Vertical line shape that we can re use.
-        """
-
         self.vLine = QtWidgets.QFrame()
         self.vLine.setFixedWidth(50)
         self.vLine.setMinimumHeight(40)
@@ -632,45 +629,36 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.vLine.setFrameShadow(QtWidgets.QFrame.Plain)
 
     def QHLineShape(self):
-        """This function creates a Horizontal line shape that we can re use.
-        """
-
         self.hLine = QtWidgets.QFrame()
         self.hLine.setFixedWidth(50)
         self.hLine.setMinimumHeight(40)
         self.hLine.setLineWidth(2)
         self.hLine.setFrameShape(QtWidgets.QFrame.HLine)
         self.hLine.setFrameShadow(QtWidgets.QFrame.Plain)
-
-    def mayaInteract(self):
-        """Here is all the connections to interact with maya.
-        The connections are established between the 'pipelineUI' file
-        and all the other files refered to their own functions.
-        for example : the file 'mayaAttributes.py' allows to do some actions
-        about maya attributes.
-        """
-
-
-
-        self.attribCreateButton.clicked.connect(self.attribute)
-
-    def attribute(self):
         
-        self.name = self.attribNameLineEdit.text()
-        self.value = self.attribLineEdit.text()
-        self.type = self.comboBoxAttribType.currentText()
-        self.on = self.comboBoxAttribTS.currentText()
+    def clickMeClicked(self):
 
-        if(self.type == 'Integer'):
-            self.type = 'long'
-            self.value = int(self.value)
-        
-        elif(self.type == 'String'):
-            self.type = 'string'
-            self.value = self.value
+        print(self.line.text())
+
+        if(_IN_MAYA_ == True):
+            for node in cmds.ls():
+                print(node)
 
         else:
-            self.type = 'double'
-            self.value = float(self.value)
+            print("NON JE SUIS PAS DANS MAYA, CAR MAYA C'EST DU BRIN")
+'''
+class WorkerThread(QtCore.QRunnable):
 
-        self.mayaAttrib.attributeCreate(name = self.name, value = self.value, type = self.type, on = self.on)
+    def __init__(self, parent=None):
+
+        super(WorkerThread, self).__init__(parent)
+
+    def run(self):
+        
+        self.pipeline = PipelineUI()
+        self.rootIndex = self.pipeline.model.index(self.pipeline.path)
+        self.proxyIndex = self.pipeline.proxyModel.mapFromSource(self.rootIndex)
+        self.pipeline.searchTreeView.setRootIndex(self.proxyIndex)
+        
+        print("the thread is finished")
+'''
