@@ -2,7 +2,6 @@
 from Qt import QtWidgets, QtCore, QtGui
 
 from pipelineToolUI.mayaAttributes import *
-from pipelineToolUI.mayaExports import *
 
 import sys
 
@@ -27,18 +26,16 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.comboBoxAttribTS = QtWidgets.QComboBox()
         self.attribNameLineEdit = QtWidgets.QLineEdit()
         self.attribLineEdit = QtWidgets.QLineEdit()
-        
+        self.attribLineEdit.setFixedWidth(243)
 
         self.attribDeleteButton = QtWidgets.QPushButton('Delete')
 
-        self.taskPushButton = QtWidgets.QPushButton('Tasks')
 
+        
         self.attribCreateButton.clicked.connect(self.mayaAttributeCnR)
         self.comboBoxAttribTS.activated[str].connect(self.determineAttribName)
 
         self.attribDeleteButton.clicked.connect(self.mayaAttributeDel)
-
-        self.taskPushButton.clicked.connect(self.exportTasks)
 
         self.initUI()
         
@@ -253,10 +250,6 @@ class PipelineUI(QtWidgets.QMainWindow):
         #self.searchLineEdit.textChanged.connect(self.onTextChanged)
         #self.model.directoryLoaded.connect(self._fetchAndExpand)
 
-    def comboTeam(self):
-
-        return self.comboBoxTeam.currentIndex()
-
     def searchNDropInteract(self):
         """Here is the search and drop interaction code.
         We use condition to set the path and the QTreeview point on this path.
@@ -385,8 +378,6 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.attribNameLabel = QtWidgets.QLabel('Name :')
         self.setAttribLabel = QtWidgets.QLabel('Value :')
         self.setAttribLabel.setFixedWidth(50)
-
-        self.attribLineEdit.setFixedWidth(243)
 
         # Create the combo box to choose transform or shape attribute.
         
@@ -656,7 +647,7 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.exportButtonLayout.setSpacing(30)
 
         # Create the QPushButton widgets.
-        
+        self.taskPushButton = QtWidgets.QPushButton('Tasks')
         self.taskPushButton.setFixedSize(250, 100)
         self.publishPushButton = QtWidgets.QPushButton('Publishs')
         self.publishPushButton.setFixedSize(250, 100)
@@ -720,9 +711,6 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.name and self.on are re used from the mayaAttributeCnR function just on top.
         mayaAttributeDel is called by the Delete button when he is clicked.
         """
-        self.name = self.attribNameLineEdit.text()
-        self.on = self.comboBoxAttribTS.currentText()
-
         self.mayaAttrib.attributeDelete(attrName = self.name, on = self.on)
 
     def exportsInteract(self):
@@ -734,12 +722,3 @@ class PipelineUI(QtWidgets.QMainWindow):
                 self.sceneNameLineEdit.setText(querySceneName)
             else:
                 self.sceneNameLineEdit.setPlaceholderText("Untilted Scene !")
-
-            
-
-    def exportTasks(self):
-
-        self.export = MayaExports()
-
-        self.export.mayaExportPath(self.path)
-        self.export.treeVerification()

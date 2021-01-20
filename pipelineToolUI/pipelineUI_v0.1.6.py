@@ -4,7 +4,11 @@ from Qt import QtWidgets, QtCore, QtGui
 from pipelineToolUI.mayaAttributes import *
 from pipelineToolUI.mayaExports import *
 
-import sys
+from pipelineToolUI.treeAnalysis import *
+
+#from pipelineToolUI.test import MyModel
+
+import re
 
 _IN_MAYA_ = False
 
@@ -15,6 +19,44 @@ except:
     pass
 
 
+class JsonFiles():
+    
+    def readInJson(self):
+
+        with open("D:\documents\structureTree.json") as list:
+
+            self.pathList=json.load(list)
+        
+            return self.pathList
+
+
+class MyModel(QtGui.QStandardItemModel):
+    def __init__(self, parent=None):
+        super(MyModel, self).__init__(parent)
+        self.get_contents()
+        
+    def get_contents(self):
+        self.analysis = JsonFiles()
+        self.clear()
+        contents = self.analysis.readInJson()
+
+        for content in contents:
+            parent = self.invisibleRootItem()
+            for word in content.split("\\"):
+                for i in range(parent.rowCount()):
+                    item = parent.child(i)
+                    if item.text() == word:
+                        it = item
+                        break
+                else:
+                    it = QtGui.QStandardItem(word)
+                    parent.setChild(parent.rowCount(), it)
+                parent = it
+
+
+
+
+
 class PipelineUI(QtWidgets.QMainWindow):
 
     def __init__(self, parent = None, **kwargs):
@@ -23,22 +65,26 @@ class PipelineUI(QtWidgets.QMainWindow):
         super(PipelineUI, self).__init__(parent = parent)
 
 
-        self.attribCreateButton = QtWidgets.QPushButton('Set')
+        self.attribCreateButton = QtWidgets.QPushButton('Create')
         self.comboBoxAttribTS = QtWidgets.QComboBox()
         self.attribNameLineEdit = QtWidgets.QLineEdit()
         self.attribLineEdit = QtWidgets.QLineEdit()
-        
 
         self.attribDeleteButton = QtWidgets.QPushButton('Delete')
 
         self.taskPushButton = QtWidgets.QPushButton('Tasks')
-
+        self.publishPushButton = QtWidgets.QPushButton('Publishs')
+        
         self.attribCreateButton.clicked.connect(self.mayaAttributeCnR)
         self.comboBoxAttribTS.activated[str].connect(self.determineAttribName)
 
         self.attribDeleteButton.clicked.connect(self.mayaAttributeDel)
 
-        self.taskPushButton.clicked.connect(self.exportTasks)
+        self.taskPushButton.clicked.connect(self.mayaExportPath)
+        self.taskPushButton.clicked.connect(self.searchInJsonList)
+        self.publishPushButton.clicked.connect(self.mayaExportPath)
+
+        
 
         self.initUI()
         
@@ -46,11 +92,17 @@ class PipelineUI(QtWidgets.QMainWindow):
         """Create the widget interface.
         """
         self.mayaAttrib = MayaAttributes()
+        self.mayaExport = MayaExports()
+        self.analysisTree = JsonFiles()
+        
         # Set the window title.
         self.setWindowTitle('Pipeline Tool')
         # Set the window size.
         self.setMinimumSize(1050, 900)
         self.setMaximumSize(1050, 900)
+
+        
+
 
         ### Compute the different Widgets of the UI. ###
         self.layoutBase()
@@ -62,14 +114,12 @@ class PipelineUI(QtWidgets.QMainWindow):
 
         # Compute the searchAndDropLayout widget.
         self.searchAndDropWidget()
-        
+
         self.attribUIWidget()
 
         self.exportUIWidget()
 
         self.attribExport()
-
-        self.exportsInteract()
 
         self.exportButtons()
 
@@ -78,7 +128,7 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.childLayout1.addWidget(self.teamWidget)
         self.childLayout1.addWidget(self.searchNDropWidget)
 
-        self.childWidget1.setLayout(self.childLayout1)
+        self.chilWidget1.setLayout(self.childLayout1)
         
         self.childLayout2.addWidget(self.localWidget)
         self.childLayout2.addWidget(self.attribVWidget)
@@ -87,16 +137,31 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.childLayout2.addWidget(self.attribExportWidget)
         self.childLayout2.addWidget(self.exportButtonWidget)
 
-        self.childWidget2.setLayout(self.childLayout2)
+        self.chilWidget2.setLayout(self.childLayout2)
 
         # Add child widgets to the main layout.
 
-        self.mainLayout.addWidget(self.childWidget1)
-        self.mainLayout.addWidget(self.childWidget2)
+        self.mainLayout.addWidget(self.chilWidget1)
+        self.mainLayout.addWidget(self.chilWidget2)
 
         # Set the main layout to the main widget.
         self.mainWidget.setLayout(self.mainLayout)
         self.setCentralWidget(self.mainWidget)
+
+    def searchInJsonList(self):
+    
+        self.read = self.analysisTree.readInJson()
+        self.text = self.searchLineEdit.text()
+
+        matchingList = []
+
+        for item in self.read:
+            matches = re.findall(self.text, item)
+
+            if(matches):
+                matchingList.append(item)
+        
+        return matchingList
 
     def layoutBase(self):
         """Create the main and the two children base layouts.
@@ -110,8 +175,8 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.mainLayout.setContentsMargins(0, 0, 0, 0)
 
         # Create the child widgets.
-        self.childWidget1 = QtWidgets.QWidget()
-        self.childWidget2 = QtWidgets.QWidget()
+        self.chilWidget1 = QtWidgets.QWidget()
+        self.chilWidget2 = QtWidgets.QWidget()
 
         # Create the child Layouts.
         self.childLayout1 = QtWidgets.QVBoxLayout()
@@ -120,8 +185,8 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.childLayout2.setContentsMargins(0, 0, 0, 0)
 
         # Set the child layouts to the child widgets.
-        self.childWidget1.setLayout(self.childLayout1)
-        self.childWidget2.setLayout(self.childLayout2)
+        self.chilWidget1.setLayout(self.childLayout1)
+        self.chilWidget2.setLayout(self.childLayout2)
 
     def localPathWidget(self):
         """Creating the local path Widget to have the possibility to work on a local tree structure.
@@ -170,7 +235,7 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.teamWidget = QtWidgets.QWidget()
 
         # Create the team layout.
-        self.teamLayout = QtWidgets.QHBoxLayout(self.childWidget1)
+        self.teamLayout = QtWidgets.QHBoxLayout(self.chilWidget1)
         self.teamLayout.setContentsMargins(10, 15, 0, 0)
         
         self.teamLayout.setSpacing(20)
@@ -203,7 +268,7 @@ class PipelineUI(QtWidgets.QMainWindow):
         # Add the layout to the widget.
         self.teamWidget.setLayout(self.teamLayout)
 
-        self.comboBoxTeam.activated[str].connect(self.searchNDropInteract)
+        #self.comboBoxTeam.activated[str].connect(self.searchNDropInteract)
 
     def teamLockInteract(self):
         """Here is the condition to lock the possibility to change the team name.
@@ -227,7 +292,7 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.searchNDropWidget = QtWidgets.QWidget()
 
         # Create the searchNDrop Layout.
-        self.searchNDropLayout = QtWidgets.QVBoxLayout(self.childWidget1)
+        self.searchNDropLayout = QtWidgets.QVBoxLayout(self.chilWidget1)
         self.searchNDropLayout.setContentsMargins(10, 0, 0, 0)
         # Create and set the search label.
         self.searchLabel = QtWidgets.QLabel('Search :')
@@ -236,33 +301,44 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.searchLineEdit = QtWidgets.QLineEdit()
         # Create the QtreeView searcher.
         self.searchTreeView = QtWidgets.QTreeView()
-        
-        self.searchNDropInteract()
-        #self.searchTreeView.expandAll()
+
+        self.mod = MyModel(self.searchTreeView)
+
+
+        #self.searchNDropInteract()
+
         # Add the widgets to the searchNDropLayout.
         self.searchNDropLayout.addWidget(self.hLine)
         self.searchNDropLayout.addWidget(self.searchLabel, 0, QtCore.Qt.AlignHCenter)
         self.searchNDropLayout.addWidget(self.searchLineEdit)
         self.searchNDropLayout.addWidget(self.searchTreeView)
 
-        self.text = self.searchLineEdit.text()
-
         # Add the layout to the widget.
         self.searchNDropWidget.setLayout(self.searchNDropLayout)
 
-        #self.searchLineEdit.textChanged.connect(self.onTextChanged)
-        #self.model.directoryLoaded.connect(self._fetchAndExpand)
-
-    def comboTeam(self):
-
-        return self.comboBoxTeam.currentIndex()
-
+        self.searchLineEdit.textChanged.connect(self.searchInJsonList)
+        
+    
+    
+    '''
+    def searchInProxyModel(self):
+        self.text = self.searchLineEdit.text()
+        model = self.proxyList.model()
+        self.match = model.match(
+            model.index(0, self.proxyList.modelColumn()),
+            QtCore.Qt.DisplayRole,
+            self.text,
+            hits=1,
+            flags=QtCore.Qt.MatchStartsWith
+        )
+    '''
     def searchNDropInteract(self):
         """Here is the search and drop interaction code.
         We use condition to set the path and the QTreeview point on this path.
         After we define the model of the QTreeview and we use Filters and Sort filter proxy model
         to search in the tree structure.
         """
+        
         # Get the current index of the team.
         self.teamIdx = self.comboBoxTeam.currentIndex()
 
@@ -276,80 +352,59 @@ class PipelineUI(QtWidgets.QMainWindow):
                 self.path = "P:\shows\LDS"
             elif(self.teamIdx == 2):
                 self.path = "P:\shows\OPS"
-
+        
         # Define the file system model.
         self.model = QtWidgets.QFileSystemModel(self.searchTreeView)
 
         # Set the root path.
         self.model.setRootPath(self.path)
         
-        self.model.setFilter(QtCore.QDir.NoDotAndDotDot
+        self.mod.setFilter(QtCore.QDir.NoDotAndDotDot
             | QtCore.QDir.AllEntries
-            | QtCore.QDir.Files
-            | QtCore.QDir.Dirs)
-
-        if(_IN_MAYA_ == True):
-            self.proxyModel = QtCore.QSortFilterProxyModel(recursiveFilteringEnabled=True,
+            | QtCore.QDir.Dirs
+            | QtCore.QDir.Files)
+        
+        self.proxyModel = QtCore.QSortFilterProxyModel(recursiveFilteringEnabled = True,
             filterRole=QtWidgets.QFileSystemModel.FileNameRole)
-        else:
-            self.proxyModel = QtCore.QSortFilterProxyModel(filterRole=QtWidgets.QFileSystemModel.FileNameRole)
 
-        QtCore.QCoreApplication.processEvents()
-
-        self.proxyModel.setSourceModel(self.model)
+        self.proxyModel.setSourceModel(self.mod)
 
         # Set the model, the root index and the drop possibility.
-        self.searchTreeView.setModel(self.proxyModel)
-        
-        self.adjust_root_index()
-        
-        self.searchTreeView.header().setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
-        self.searchTreeView.setColumnHidden(1, True)
-        self.searchTreeView.setColumnHidden(2, True)
-        self.searchTreeView.setColumnHidden(3, True)
+        self.searchTreeView.setModel(self.mod)
+
+        #self.onTextChanged()
+
         self.searchTreeView.setAcceptDrops(True)
         self.searchTreeView.setDragDropOverwriteMode(True)
         self.searchTreeView.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
-    '''
-    def _fetchAndExpand(self, path):
-        index = self.model.index(path)
-        self.searchTreeView.expand(index)  # expand the item
-        for i in range(self.model.rowCount(index)):
-            #QtCore.QCoreApplication.processEvents()
-            # fetch all the sub-folders
-            child = index.child(i, 0)
-            if self.model.isDir(child):
-                self.model.setRootPath(self.model.filePath(child))
-            QtCore.QCoreApplication.processEvents()
-    
-    @QtCore.Slot(str)
+        '''
+
+
     def onTextChanged(self):
         """This function allows to expand or collapse all the tree structure
         with as condition the fact to write or not in the search line edit.
         """
-        self.adjust_root_index()
-        #self.searchTreeView.expandAll()
+
         self.text = self.searchLineEdit.text()
-        
-        if(self.text != ""):
-            #self._fetchAndExpand(self.path)
-            self.searchTreeView.expand(self.rootIndex)
-        else:
-            self.searchTreeView.collapseAll()
-        
+
+        self.match = self.mod.match(
+            self.mod.index(0, 0, self.searchTreeView.currentIndex()), 
+            QtCore.Qt.DisplayRole, 
+            self.text, 
+            hits=1, 
+            flags=QtCore.Qt.MatchStartsWith)
+
+        if self.match:
+            self.searchTreeView.expand(self.match[0])
+
+
         self.proxyModel.setFilterWildcard("*{}*".format(self.text))
+
+        self.rootIndex = self.mod.index(0, 0, self.searchTreeView.currentIndex())
+        self.proxyIndex = self.proxyModel.mapFromSource(self.rootIndex)
+        self.searchTreeView.setRootIndex(self.proxyIndex)
     '''
         
-        
-    def adjust_root_index(self):
-        
-        self.rootIndex = self.model.index(self.path)
-        
-        self.proxyIndex = self.proxyModel.mapFromSource(self.rootIndex)
-        
-        self.searchTreeView.setRootIndex(self.proxyIndex)
-
-
     def attribUIWidget(self):
         """Creating the attribute Widget.
         This widget can add or delete different type of attributes on transforms and shapes in maya.
@@ -365,16 +420,16 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.attribChoiceWidget = QtWidgets.QWidget()
         self.attribTypeWidget = QtWidgets.QWidget()
         # Create the attrib layout.
-        self.attribTypeLayout = QtWidgets.QHBoxLayout(self.childWidget2)
+        self.attribTypeLayout = QtWidgets.QHBoxLayout(self.chilWidget2)
         self.attribTypeLayout.setContentsMargins(50, 0, 5, 0)
 
-        self.attribLayout = QtWidgets.QHBoxLayout(self.childWidget2)
+        self.attribLayout = QtWidgets.QHBoxLayout(self.chilWidget2)
         self.attribLayout.setContentsMargins(0, 0, 5, 5)
 
-        self.attribChoiceLayout = QtWidgets.QHBoxLayout(self.childWidget2)
+        self.attribChoiceLayout = QtWidgets.QHBoxLayout(self.chilWidget2)
         self.attribChoiceLayout.setContentsMargins(0, 0, 5, 5)
 
-        self.attribVLayout = QtWidgets.QVBoxLayout(self.childWidget2)
+        self.attribVLayout = QtWidgets.QVBoxLayout(self.chilWidget2)
         self.attribVLayout.setContentsMargins(0, 1, 5, 5)
 
         # Create and set attribute labels.
@@ -384,10 +439,10 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.attribLabel.setFont(QtGui.QFont('Times', 10))
         self.attribNameLabel = QtWidgets.QLabel('Name :')
         self.setAttribLabel = QtWidgets.QLabel('Value :')
-        self.setAttribLabel.setFixedWidth(50)
-
-        self.attribLineEdit.setFixedWidth(243)
-
+        # Create attrib edit line.
+        
+        
+        #self.attribNameLineEdit.setText('GuerillaTags')
         # Create the combo box to choose transform or shape attribute.
         
         self.comboBoxAttribTS.addItem('Shape')
@@ -399,8 +454,11 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.comboBoxAttribType.addItem('Integer')
         self.comboBoxAttribType.addItem('Float')
 
-        # Add widgets to layout and set layout to widgets.
+        # Create attrib buttons 'create' and 'replace'.
         
+        self.attribReplaceButton = QtWidgets.QPushButton('Replace')
+        
+
         self.attribTypeLayout.addWidget(self.attribLabel, 0, QtCore.Qt.AlignRight)
         self.attribTypeLayout.addWidget(self.attribTypeLabel, 0, QtCore.Qt.AlignRight)
         self.attribTypeLayout.addWidget(self.attribOnLabel, 0, QtCore.Qt.AlignHCenter)  
@@ -420,6 +478,7 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.attribLayout.addWidget(self.setAttribLabel)
         self.attribLayout.addWidget(self.attribLineEdit)
         self.attribLayout.addWidget(self.attribCreateButton)
+        self.attribLayout.addWidget(self.attribReplaceButton)
         self.attribLayout.addWidget(self.attribDeleteButton)
         # Add the layout to the attrib widget.
         self.attribWidget.setLayout(self.attribLayout)
@@ -432,6 +491,8 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.attribVWidget.setLayout(self.attribVLayout)
 
         # Connect attrib type to attribName line edit.
+
+        
     
     def determineAttribName(self):
         """Here is a basic automation to define two currently used attributes 'GuerillaTags' and 'variant'
@@ -495,7 +556,7 @@ class PipelineUI(QtWidgets.QMainWindow):
 
         # Create line edit scene name.
         self.sceneNameLineEdit = QtWidgets.QLineEdit()
-        self.sceneNameLineEdit.returnPressed.connect(self.exportsInteract)
+
         # Add widgets to the scene name layout.
         self.exportSceneNameLayout.addWidget(self.exportSceneNameLabel, 0, QtCore.Qt.AlignHCenter)
         self.exportSceneNameLayout.addWidget(self.sceneNameLineEdit)
@@ -658,7 +719,7 @@ class PipelineUI(QtWidgets.QMainWindow):
         # Create the QPushButton widgets.
         
         self.taskPushButton.setFixedSize(250, 100)
-        self.publishPushButton = QtWidgets.QPushButton('Publishs')
+        
         self.publishPushButton.setFixedSize(250, 100)
 
         # Add the buttons to the layout.
@@ -702,16 +763,16 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.on = self.comboBoxAttribTS.currentText()
 
         if(self.type == 'Integer'):
-            self.type   = 'long'
-            self.value  = int(self.value)
+            self.type = 'long'
+            self.value = int(self.value)
         
         elif(self.type == 'String'):
-            self.type   = 'string'
-            self.value  = self.value
+            self.type = 'string'
+            self.value = self.value
 
         else:
-            self.type   = 'double'
-            self.value  = float(self.value)
+            self.type = 'double'
+            self.value = float(self.value)
 
         self.mayaAttrib.attributeCreate(name = self.name, value = self.value, type = self.type, on = self.on)
 
@@ -720,26 +781,19 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.name and self.on are re used from the mayaAttributeCnR function just on top.
         mayaAttributeDel is called by the Delete button when he is clicked.
         """
-        self.name = self.attribNameLineEdit.text()
-        self.on = self.comboBoxAttribTS.currentText()
-
         self.mayaAttrib.attributeDelete(attrName = self.name, on = self.on)
 
-    def exportsInteract(self):
+    def mayaExportPath(self):
 
-        if(_IN_MAYA_ == True):
+        if(self.localCheckBox.isChecked() == True):
+            self.path = "D:\IA"
+        else:          
+            if(self.teamIdx == 0):
+                self.path = "D:\shows\IA"
+            elif(self.teamIdx == 1):
+                self.path = "D:\shows\LDS"
+            elif(self.teamIdx == 2):
+                self.path = "D:\shows\OPS"
 
-            querySceneName = cmds.file(query = True, sceneName = True, shortName = True)
-            if(querySceneName):
-                self.sceneNameLineEdit.setText(querySceneName)
-            else:
-                self.sceneNameLineEdit.setPlaceholderText("Untilted Scene !")
-
-            
-
-    def exportTasks(self):
-
-        self.export = MayaExports()
-
-        self.export.mayaExportPath(self.path)
-        self.export.treeVerification()
+        self.mayaExport.mayaExportPath(rootPath = self.path)
+        self.mayaExport.treeVerification()
