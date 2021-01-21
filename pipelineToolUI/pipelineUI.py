@@ -3,6 +3,7 @@ from Qt import QtWidgets, QtCore, QtGui
 
 from pipelineToolUI.mayaAttributes import *
 from pipelineToolUI.mayaExports import *
+from pipelineToolUI.setTypeAttribWindow import *
 
 import sys
 
@@ -183,7 +184,7 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.comboBoxTeam.addItem('IA')
         self.comboBoxTeam.addItem('LDS')
         self.comboBoxTeam.addItem('OPS')
-        
+
         # Create and set the checkBox Lock.
         self.checkBoxLock = QtWidgets.QCheckBox('Lock')
         self.checkBoxLock.setChecked(True)
@@ -741,5 +742,6 @@ class PipelineUI(QtWidgets.QMainWindow):
 
         self.export = MayaExports()
 
-        self.export.mayaExportPath(self.path)
-        self.export.treeVerification()
+        self.export.getExportPath(self.path)
+        self.export.defineItemsTeam(self.comboBoxTeam.currentText())
+        self.export.typeTagAttribCreation()
