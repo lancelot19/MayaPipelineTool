@@ -23,7 +23,7 @@ class SetTypeAttribWindow(QtWidgets.QDialog):
 
         self.comboBox = QtWidgets.QComboBox()
 
-        self.pushButton = QtWidgets.QPushButton('OK !')
+        self.pushButton = QtWidgets.QPushButton('Accept')
         self.pushButton.setDefault(True)
 
         layout.addWidget(assetNameLabel, 0, QtCore.Qt.AlignCenter)
@@ -40,26 +40,36 @@ class SetTypeAttribWindow(QtWidgets.QDialog):
         self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint) 
 
         self.pushButton.clicked.connect(self.clickedClose)
-        #self.pushButton.clicked.connect(self.clickedClose)
 
     def clickedClose(self):
-
+        """This function allows to close the QDialog with the accept method when the accept is clicked.
+        """
         self.accept()
 
     def clickedGetTypeTag(self):
-
+        """This function allows to get the comboBox current text.
+        """
         self.comboBox.currentText()
 
     def assetName(self, assetName):
+        """This function allows to set the label with the asset name.
 
+        Args:
+            assetName (string): The name of the asset.
+        """
         self.nameAsset.setText(assetName)
 
     def items(self, team):
+        """This function allows to set the comboBox items
+        defined by the team name.
 
+        Args:
+            team (string): The name of the team.
+        """
         if(team == 'IA'):
 
             self.comboBox.addItem('characters')
-            self.comboBox.addItem('cloth')
+            self.comboBox.addItem('Cloth')
             self.comboBox.addItem('environment')
             self.comboBox.addItem('props')
             self.comboBox.addItem('propsTunnel')
@@ -68,7 +78,7 @@ class SetTypeAttribWindow(QtWidgets.QDialog):
         if(team == 'LDS'):
 
             self.comboBox.addItem('characters')
-            self.comboBox.addItem('cloth')
+            self.comboBox.addItem('Cloth')
             self.comboBox.addItem('environment')
             self.comboBox.addItem('props')
             self.comboBox.addItem('propsMale')

@@ -59,7 +59,7 @@ class SetTypeAttribWindow(QtWidgets.QDialog):
         if(team == 'IA'):
 
             self.comboBox.addItem('characters')
-            self.comboBox.addItem('cloth')
+            self.comboBox.addItem('Cloth')
             self.comboBox.addItem('environment')
             self.comboBox.addItem('props')
             self.comboBox.addItem('propsTunnel')
@@ -68,7 +68,7 @@ class SetTypeAttribWindow(QtWidgets.QDialog):
         if(team == 'LDS'):
 
             self.comboBox.addItem('characters')
-            self.comboBox.addItem('cloth')
+            self.comboBox.addItem('Cloth')
             self.comboBox.addItem('environment')
             self.comboBox.addItem('props')
             self.comboBox.addItem('propsMale')

@@ -30,7 +30,6 @@ class MayaExports():
         Args:
             defTeam (string): The team name got in pipelineUI.
         """
-
         self.team = defTeam
 
     def currentSel(self):
@@ -41,11 +40,7 @@ class MayaExports():
         """This function allow to verify if the typeTag exists.
         If not exists, the function call the setTypeAttribWindow
         to set the attributs on each assets with personalized tags by team name.
-
-        Args:
-            aOrS (string): Assets or shots.        
         """
-
         if(aOrS == 'assets'):
             self.setAttribDial = SetTypeAttribWindow()                                      #Instantiate the SetTypeAttribWindow class.
 
@@ -163,10 +158,8 @@ class MayaExports():
         existing before exporting animation.
 
         Args:
-            seqNumb (string): The sequence number.
-            shotNumb (string): The shot number.
+            each (string): Correponding to each in the current selection.
         """
-        
         if(self.team == 'IA'):
 
             self.shotDirs =   [self.exportPath + r"/shots/" + seqNumb + r"/" + shotNumb + r"/publishs/animation",
@@ -223,16 +216,6 @@ class MayaExports():
                 os.makedirs(dirs)                                                       # Create the dir.
 
     def pathExports(self, tOrP, aOrS, each, endPath, seq, shot):
-        """This function allows to setup the export path.
-
-        Args:
-            tOrP (string): Tasks or publishs.
-            aOrS (string): Assets or shots.
-            each (string): Each asset in the current selection.
-            endPath (string): modelling or animation.
-            seq (string): The sequence number.
-            shot (string): The shot number.
-        """
 
         if(aOrS == 'assets'):
             dic = r"/" + self.dicValue + r"/"
@@ -241,16 +224,6 @@ class MayaExports():
             self.pathExport = self.exportPath + r"/" + aOrS + r"/" + seq + r"/" + shot + r"/" + tOrP + r"/" + endPath + "/"   # The relative path to export assets.
 
     def pathExportsPublish(self, tOrP, aOrS, each, endPath, seq, shot):
-        """This function allows to setup the path export for publishs.
-
-        Args:
-            tOrP (string): tasks or publishs.
-            aOrS (string): Assets or shots.
-            each (string): Each asset in the current selection.
-            endPath (string): modelling or animation.
-            seq (string): the sequence number.
-            shot (string): the shot number.
-        """
 
         self.pathExports(tOrP, aOrS, each, endPath, seq, shot)
 
@@ -258,6 +231,7 @@ class MayaExports():
         folderVersion = ''
 
         if(folderList):
+
             folderVersion = 'v' + str(int(folderList[-1][1:]) + 1).zfill(3)
 
         else:
@@ -270,8 +244,6 @@ class MayaExports():
             self.pathExport = self.exportPath + r"/" + aOrS + r"/" + seq + r"/" + shot + r"/" + tOrP + r"/" + endPath + "/" + folderVersion + "/"   # The relative path to export assets.
 
     def publishFolder(self):
-        """This function allows to create the version folder for publishs.
-        """
 
         self.verification = os.path.isdir(self.pathExport)                          # Verification if each dirs in the list exists.
 
@@ -279,15 +251,6 @@ class MayaExports():
             os.makedirs(self.pathExport)
 
     def contains_word(self, s, w):
-        """This function allows to know if a string is containing a word.
-
-        Args:
-            s (string): The string we want to verify in.
-            w (string): The string we want to find.
-
-        Returns:
-            string: The string contained in our research if it found.
-        """
 
         return (' ' + w + ' ') in (' ' + s + ' ')
 
@@ -298,10 +261,6 @@ class MayaExports():
             checkBox (bool): The checkBox who is checked.
             tOrP (string): Define if it's a tasks or a publishs export.
             aOrS (string): Define if it's a assets or shots export.
-            endPath (string): modelling or animation.
-            seq (string): The sequence number.
-            shot (string): The shot number.
-            sceneName (string): The name of the scene.
         """
 
         self.currentSel()                                                               # Get the current selection list.
@@ -319,22 +278,13 @@ class MayaExports():
                 if('_' in each):
                     eachSplit = each.split('_')
                     
-                    if(any(map(str.isdigit,str(eachSplit[-1])))):                       # verify is the last part of the name is ints.
+                    if(any(map(str.isdigit,str(eachSplit[-1])))):
 
                         each = ''.join(eachSplit[:-1])
 
-                split = each.split(':')
+                self.pathExports(tOrP, aOrS, each, endPath, seq, shot)
 
-                name = ''
-                if(self.team == 'IA'):
-                    name = split[-1]
-
-                else:
-                    name = split[0]
-
-                self.pathExports(tOrP, aOrS, split[-1], endPath, seq, shot)
-
-                sel = [name]                                                            # The name of the asset I want to include in the search (second argument of my listdir filter).
+                sel = [each]                                                            # The name of the asset I want to include in the search (second argument of my listdir filter).
                 
                 files = []
                 folder = os.listdir(self.pathExport)
@@ -344,12 +294,14 @@ class MayaExports():
                     else:
                         files = [f for f in os.listdir(self.pathExport) if any(f.endswith(ext) for ext in includeExt) and any(self.contains_word(s, each) for s in sel)] # Comprehensive list to filter files in the dir pathExport by extension and outliner names.
                 else:
+                    
                     if(folder):
                         
                         if(aOrS == 'shots'):
                             files = [f for f in os.listdir(self.pathExport + folder[-1]) if any(f.endswith(ext) for ext in includeExt) and any(self.contains_word(s, f.split('_')[3]) for s in sel)] # Comprehensive list to filter files in the dir pathExport by extension and outliner names.
                         else:
-                            files = [f for f in os.listdir(self.pathExport + folder[-1]) if any(f.endswith(ext) for ext in includeExt) and any(self.contains_word(s, each) for s in sel)] # Comprehensive list to filter files in the dir pathExport by extension and outliner names.                            
+                            files = [f for f in os.listdir(self.pathExport + folder[-1]) if any(f.endswith(ext) for ext in includeExt) and any(self.contains_word(s, each) for s in sel)] # Comprehensive list to filter files in the dir pathExport by extension and outliner names.
+                            
                     else:
                         os.makedirs(self.pathExport + 'v001')
                         if(aOrS == 'shots'):
@@ -357,7 +309,8 @@ class MayaExports():
                         else:
                             files = [f for f in os.listdir(self.pathExport + 'v001') if any(f.endswith(ext) for ext in includeExt) and any(self.contains_word(s, each) for s in sel)] # Comprehensive list to filter files in the dir pathExport by extension and outliner names.
                     
-                self.fileName = ''                
+                self.fileName = ''
+
                 if(files):                                                              # If the search found one or many files.
                     lastFile = files[-1]                                                # keep the last file version.
 
@@ -366,15 +319,15 @@ class MayaExports():
                     keepVersion = delExt[0].split('_v')                                 # Get the first result of the split and split again to keep the version of the file.
 
                     newVersion = int(keepVersion[1]) + 1                                # Create a new version using the last version number and add it 1.
-                    
-                    self.fileName = sceneName + name + "_v" + str(newVersion).zfill(3)              # Define the file name with the name of the asset and the version.
+
+                    self.fileName = sceneName + each + "_v" + str(newVersion).zfill(3)              # Define the file name with the name of the asset and the version.
 
                     cmds.file(self.pathExport + self.fileName, type = 'mayaAscii', pr = True, es = True, f = True)   # Exports the file.
 
                 else:                                                                   # If the search not found one or many files.
                     newVersion = str(1).zfill(3)                                        # Creates a new version equal to '0000'.
 
-                    self.fileName = sceneName + name + "_v" + newVersion                            # Define the filename with the name of the asset and the version.
+                    self.fileName = sceneName + each + "_v" + newVersion                            # Define the filename with the name of the asset and the version.
 
                     cmds.file(self.pathExport + self.fileName, type = 'mayaAscii', pr = True, es = True, f = True)   # Exports the file.
                 
@@ -393,14 +346,9 @@ class MayaExports():
         """This function allows to export .obj files by current selection.
 
         Args:
-            checkBox (bool): The checkBox who is checked.
-            checkBoxAbc (bool): Verify if the checkBoxAbc is checked.
+            checkBox (bool): The checkBow who is checked.
             tOrP (string): Define if it's a tasks or a publishs export.
             aOrS (string): Define if it's a assets or shots export.
-            endPath (string): modelling or animation.
-            seq (string): The sequence number.
-            shot (string): The shot number.
-            sceneName (string): The name of the scene.
         """
 
         self.currentSel()                                                               # Get the current selection list.
@@ -409,11 +357,11 @@ class MayaExports():
             
             for each in self.mySel:                                                     # Loop over the selection.
                 if(aOrS == 'assets'):
-                    self.getDicValue(each)                                              # Get a value from the dictionnary by key.
+                    self.getDicValue(each)                                                  # Get a value from the dictionnary by key.
 
                 cmds.select(each, r = True)                                             # Select each asset in the current sel one by one.
 
-                includeExt = ['.obj']                                                   # The extension I want to include in the search (first parameter of my listdir filter).
+                includeExt = ['.obj']                                                    # The extension I want to include in the search (first parameter of my listdir filter).
 
                 if('_' in each):
                     eachSplit = each.split('_')
@@ -442,47 +390,45 @@ class MayaExports():
 
                         newVersion = int(keepVersion[1]) + 1                                # Create a new version using the last version number and add it 1.
                         
-                        self.fileName = sceneName + each + "_v" + str(newVersion).zfill(3)  # Define the file name with the name of the asset and the version.
+                        self.fileName = sceneName + each + "_v" + str(newVersion).zfill(3)              # Define the file name with the name of the asset and the version.
 
                         cmds.file(self.pathExport + self.fileName, options = "groups=1;ptgroups=0;materials=0;smoothing=1;normals=1", type = 'OBJexport', pr = True, es = True, f = True)   # Exports the file.
 
                     else:                                                                   # If the search not found one or many files.
                         newVersion = str(1).zfill(3)                                        # Creates a new version equal to '0000'.
 
-                        self.fileName = sceneName + each + "_v" + newVersion                # Define the filename with the name of the asset and the version.
+                        self.fileName = sceneName + each + "_v" + newVersion                            # Define the filename with the name of the asset and the version.
 
                         cmds.file(self.pathExport + self.fileName, options = "groups=1;ptgroups=0;materials=0;smoothing=1;normals=1", type = 'OBJexport', pr = True, es = True, f = True)   # Exports the file.
 
                 else:
                     folder = os.listdir(self.pathExport)
                     files = []
-                    if(folder):                                                             # If the search found one or many files.
-                        lastFile = folder[-1]                                               # keep the last file version.
+                    if(folder):                                                              # If the search found one or many files.
+                        lastFile = folder[-1]                                                # keep the last file version.
 
                         delExt = lastFile.split('v')                                        # split the extension.
                         includeExt = ['.obj']
                         includeExtAbc = ['.abc']
-                        files = [f for f in os.listdir(self.pathExport + lastFile) if any(f.endswith(ext) for ext in includeExt)]       # Comprehensive list to filter files in the dir pathExport by extension and outliner names.
+                        files = [f for f in os.listdir(self.pathExport + lastFile) if any(f.endswith(ext) for ext in includeExt)] # Comprehensive list to filter files in the dir pathExport by extension and outliner names.
                         filesAbc = [f for f in os.listdir(self.pathExport + lastFile) if any(f.endswith(ext) for ext in includeExtAbc)] # Comprehensive list to filter files in the dir pathExport by extension and outliner names.
                         if(files):
-                            newVersion = int(delExt[1]) + 1                                 # Create a new version using the last version number and add it 1.
+                            newVersion = int(delExt[1]) + 1                                # Create a new version using the last version number and add it 1.
                         
                         elif(filesAbc and checkBoxAbc.isChecked() == True):
                             
-                            newVersion = str(int(delExt[1]) + 1)                            # Create a new version using the last version number and add it 1.
+                            newVersion = str(int(delExt[1]) + 1)                                # Create a new version using the last version number and add it 1.
                         
                         else:
-                            newVersion = int(delExt[1])                                     # Create a new version using the last version number and add it 1.
+                            newVersion = int(delExt[1])                                    # Create a new version using the last version number and add it 1.
 
-                        self.fileName = sceneName + each + "_v" + str(newVersion).zfill(3)  # Define the file name with the name of the asset and the version.
+                        self.fileName = sceneName + each + "_v" + str(newVersion).zfill(3)              # Define the file name with the name of the asset and the version.
                         cmds.file(self.pathExport + self.fileName, options = "groups=1;ptgroups=0;materials=0;smoothing=1;normals=1", type = 'OBJexport', pr = True, es = True, f = True)   # Exports the file.
-                    
                     else:                                                                   # If the search not found one or many files.
                         newVersion = str(1).zfill(3)                                        # Creates a new version equal to '0000'.
 
                         self.fileName = sceneName + each + "_v" + newVersion
                         cmds.file(self.pathExport + self.fileName, options = "groups=1;ptgroups=0;materials=0;smoothing=1;normals=1", type = 'OBJexport', pr = True, es = True, f = True)   # Exports the file.
-                    
                     newPath = ''
                     if(os.path.isdir(self.pathExport + "v" + str(newVersion).zfill(3)) == False):
                         newPath = self.pathExport + 'v' + str(newVersion).zfill(3)
@@ -502,15 +448,6 @@ class MayaExports():
             checkBox (bool): The checkBow who is checked.
             tOrP (string): Define if it's a tasks or a publishs export.
             aOrS (string): Define if it's a assets or shots export.
-            startFrame (string): The start Frame.
-            endFrame (string): The end Frame.
-            subA (string): The subsample start.
-            subB (string): The subsample end.
-            attrExport (string): Attributes to export.
-            endPath (string): modelling or animation.
-            seq (string): The sequence number.
-            shot (string): The shot number.
-            sceneName (string): The name of the scene.
         """
 
         self.currentSel()                                                               # Get the current selection list.
@@ -519,7 +456,7 @@ class MayaExports():
             
             for each in self.mySel:                                                     # Loop over the selection.
                 if(aOrS == 'assets'):
-                    self.getDicValue(each)                                              # Get a value from the dictionnary by key.
+                    self.getDicValue(each)                                                  # Get a value from the dictionnary by key.
 
                 cmds.select(each, r = True)                                             # Select each asset in the current sel one by one.
 
@@ -534,26 +471,18 @@ class MayaExports():
 
                         each = ''.join(eachSplit[:-1])
 
-                split = each.split(':')
 
-                name = ''
+                self.pathExports(tOrP, aOrS, each, endPath, seq, shot)
 
-                if(self.team == 'IA'):
-                    name = split[-1]
 
-                else:
-                    name = split[0]
-
-                self.pathExports(tOrP, aOrS, name, endPath, seq, shot)
-
-                sel = [name]                                                                # The name of the asset I want to include in the search (second argument of my listdir filter).
+                sel = [each]                                                            # The name of the asset I want to include in the search (second argument of my listdir filter).
                 
                 files = []
                 if(tOrP == 'tasks'):
                     if(aOrS == 'shots'):
                         files = [f for f in os.listdir(self.pathExport) if any(f.endswith(ext) for ext in includeExt) and any(self.contains_word(s, f.split('_')[3]) for s in sel)] # Comprehensive list to filter files in the dir pathExport by extension and outliner names.
                     else:
-                        files = [f for f in os.listdir(self.pathExport) if any(f.endswith(ext) for ext in includeExt) and any(self.contains_word(s, each) for s in sel)]            # Comprehensive list to filter files in the dir pathExport by extension and outliner names.
+                        files = [f for f in os.listdir(self.pathExport) if any(f.endswith(ext) for ext in includeExt) and any(self.contains_word(s, each) for s in sel)] # Comprehensive list to filter files in the dir pathExport by extension and outliner names.
                 
                     self.fileName = ''
 
@@ -566,13 +495,12 @@ class MayaExports():
 
                         newVersion = int(keepVersion[1]) + 1                                # Create a new version using the last version number and add it 1.
 
-                        self.fileName = sceneName + name + "_v" + str(newVersion).zfill(3)  # Define the file name with the name of the asset and the version.
+                        self.fileName = sceneName + each + "_v" + str(newVersion).zfill(3)              # Define the file name with the name of the asset and the version.
 
                     else:                                                                   # If the search not found one or many files.
                         newVersion = str(1).zfill(3)                                        # Creates a new version equal to '0000'.
 
-                        self.fileName = sceneName + name + "_v" + newVersion
-
+                        self.fileName = sceneName + each + "_v" + newVersion
                     self.abcCommandBuilder(root, startFrame, endFrame, subA, subB, attrExport)
                 else:
                     folder = os.listdir(self.pathExport)
@@ -583,11 +511,10 @@ class MayaExports():
                     if(folder):                                                              # If the search found one or many files.
                         lastFile = folder[-1]                                                # keep the last file version.
 
-                        delExt = lastFile.split('v')                                         # split the extension.
+                        delExt = lastFile.split('v')                                        # split the extension.
                         includeExt = ['.abc']
 
-                        sel = [name]
-
+                        sel = [each]
                         if(aOrS == 'shots'):
                             files = [f for f in os.listdir(self.pathExport + lastFile) if any(f.endswith(ext) for ext in includeExt) and any(self.contains_word(s, f.split('_')[3]) for s in sel)] # Comprehensive list to filter files in the dir pathExport by extension and outliner names.
                         else:
@@ -595,16 +522,16 @@ class MayaExports():
 
                         if(files):
 
-                            newVersion = str(int(delExt[1]) + 1)                            # Create a new version using the last version number and add it 1.
+                            newVersion = str(int(delExt[1]) + 1)                                # Create a new version using the last version number and add it 1.
 
                         else:
-                            newVersion = str(int(delExt[1]))                                # Create a new version using the last version number and add it 1.
-                        self.fileName = sceneName + name + "_v" + newVersion.zfill(3)       # Define the file name with the name of the asset and the version.
+                            newVersion = str(int(delExt[1]))                                    # Create a new version using the last version number and add it 1.
+                        self.fileName = sceneName + each + "_v" + newVersion.zfill(3)              # Define the file name with the name of the asset and the version.
 
                     else:                                                                   # If the search not found one or many files.
                         newVersion = str(1).zfill(3)                                        # Creates a new version equal to '0000'.
 
-                        self.fileName = sceneName + name + "_v" + newVersion
+                        self.fileName = sceneName + each + "_v" + newVersion
 
                     self.abcCommandBuilder(root, startFrame, endFrame, subA, subB, attrExport)
                     newPath = ''
@@ -621,17 +548,7 @@ class MayaExports():
         cmds.select(self.mySel)
 
     def abcCommandBuilder(self, each, startFrame, endFrame, subA, subB, attrExport):
-        """This function allows to setup the ABC command.
 
-        Args:
-            each (string): Each asset in the current selection.
-            startFrame (int): The start frame.
-            endFrame (int): The end frame.
-            subA (string): The subsample start.
-            subB (string): The subsample end.
-            attrExport (list): The list of attributes to export.
-        """
-        
         frameRange = "-frameRange " + str(startFrame) + " " + str(endFrame)
 
         frameRSample = " -frameRelativeSample " + subA + " -frameRelativeSample 0 -frameRelativeSample " + subB

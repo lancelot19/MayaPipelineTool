@@ -5,7 +5,7 @@ from pipelineToolUI.mayaAttributes import *
 from pipelineToolUI.mayaExports import *
 from pipelineToolUI.setTypeAttribWindow import *
 
-import os
+import sys
 
 _IN_MAYA_ = False
 
@@ -21,6 +21,7 @@ if hasattr(QtCore.Qt, 'AA_EnableHighDpiScaling'):
     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
 if hasattr(QtCore.Qt, 'AA_UseHighDpiPixmaps'):
     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)
+
 
 class PipelineUI(QtWidgets.QMainWindow):
 
@@ -40,59 +41,35 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.taskPushButton = QtWidgets.QPushButton('Tasks')
         self.publishPushButton = QtWidgets.QPushButton('Publishs')
 
-        self.initUI()
-
-        self.localCheckBox.stateChanged.connect(lambda:self.localPathInteract())
-        self.localCheckBox.stateChanged.connect(lambda:self.searchNDropInteract())
-        self.pathLineEdit.returnPressed.connect(self.localPathInteract)
-        self.pathLineEdit.returnPressed.connect(self.searchNDropInteract)
-
-        self.checkBoxLock.stateChanged.connect(lambda:self.teamLockInteract())
-
-        self.comboBoxTeam.activated[str].connect(self.searchNDropInteract)
-
-        self.searchTreeView.doubleClicked.connect(self.openFiles)
-
         self.attribCreateButton.clicked.connect(self.mayaAttributeCnR)
+        self.comboBoxAttribTS.activated[str].connect(self.determineAttribName)
 
         self.attribDeleteButton.clicked.connect(self.mayaAttributeDel)
 
         self.taskPushButton.clicked.connect(self.exportTasks)
         self.publishPushButton.clicked.connect(self.exportPublishs)
 
-        
+        self.initUI()
         
     def initUI(self):
         """Create the widget interface.
         """
-
         self.mayaAttrib = MayaAttributes()
-
         # Set the window title.
         self.setWindowTitle('Pipeline Tool')
-
         # Set the window size.
-        screen = QtWidgets.QDesktopWidget().screenGeometry(-1)
-
-        self.width = screen.width()
-        self.height = screen.height()
-        if(self.width > 1920):
-            self.setMinimumSize(1050, 700)
-            self.setMaximumSize(1500, 700)
-        else:
-            self.setMinimumSize(1050/1.7, 700/1.6)
-            self.setMaximumSize(1050, 700)
-        self.resize(self.width/4, self.height/4)
+        self.setMinimumSize(1050, 900)
+        self.setMaximumSize(1050, 900)
 
         ### Compute the different Widgets of the UI. ###
         self.layoutBase()
 
-        self.QVLineShape()
-
         self.localPathWidget()
 
+        # Compute the team lock layout widget.
         self.teamLockWidget()
 
+        # Compute the searchAndDropLayout widget.
         self.searchAndDropWidget()
         
         self.attribUIWidget()
@@ -162,28 +139,25 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.localWidget = QtWidgets.QWidget()
         self.localLayout = QtWidgets.QHBoxLayout(self.localWidget)
         self.localLayout.setContentsMargins(0, 20, 10, 0)
+
         self.localLayout.setSpacing(5)
-
         self.pathLabel = QtWidgets.QLabel('Path :')
-
-        # Create local CheckBox.
         self.localCheckBox = QtWidgets.QCheckBox('Local')
-        self.localCheckBox.setChecked(True)
 
         # Create line edit for path.
-        self.pathLineEdit = QtWidgets.QLineEdit("C:/")
-        self.pathLineEdit.setMaximumSize(300, 32)
-        self.pathLineEdit.setMaximumSize(150, 32)
+        self.pathLineEdit = QtWidgets.QLineEdit()
+        self.pathLineEdit.setFixedSize(300, 32)
 
         self.localPathInteract()
 
-        # Add widgets to the layout.
-        self.localLayout.addWidget(self.localCheckBox)
-        self.localLayout.addWidget(self.pathLabel)
+        self.localLayout.addWidget(self.localCheckBox, 0, QtCore.Qt.AlignRight)
+        self.localLayout.addWidget(self.pathLabel, 0, QtCore.Qt.AlignRight)
         self.localLayout.addWidget(self.pathLineEdit)
 
-        # Set the layout.
         self.localWidget.setLayout(self.localLayout)
+
+        self.localCheckBox.stateChanged.connect(lambda:self.localPathInteract())
+        self.localCheckBox.stateChanged.connect(lambda:self.searchNDropInteract())
 
     def localPathInteract(self):
         """Here is the condition to set the local path if we check the checkbox 'local'.
@@ -191,10 +165,10 @@ class PipelineUI(QtWidgets.QMainWindow):
 
         if(self.localCheckBox.isChecked() == True):
             self.localPath = self.pathLineEdit.text()
-            
+            self.pathLineEdit.setEnabled(False)
         else:
             self.localPath = None
-            
+            self.pathLineEdit.setEnabled(True)
 
     def teamLockWidget(self):
         """Creating the team lock Widget. We can change the team name and lock it.
@@ -206,7 +180,7 @@ class PipelineUI(QtWidgets.QMainWindow):
 
         # Create the team layout.
         self.teamLayout = QtWidgets.QHBoxLayout(self.childWidget1)
-        self.teamLayout.setContentsMargins(10, 20, 0, 3)
+        self.teamLayout.setContentsMargins(10, 15, 0, 0)
         
         self.teamLayout.setSpacing(20)
         
@@ -218,23 +192,27 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.comboBoxTeam.addItem('IA')
         self.comboBoxTeam.addItem('LDS')
         self.comboBoxTeam.addItem('OPS')
-        self.comboBoxTeam.setCurrentIndex(0)
 
         # Create and set the checkBox Lock.
         self.checkBoxLock = QtWidgets.QCheckBox('Lock')
         self.checkBoxLock.setChecked(True)
-        
+        self.checkBoxLock.stateChanged.connect(lambda:self.teamLockInteract())
 
         self.teamLockInteract()
+
+        self.QVLineShape()
+        self.vLine.setFixedWidth(5)
 
         # Add the widgets to the teamLayout.
         self.teamLayout.addWidget(self.teamLabel, 0, QtCore.Qt.AlignRight)
         self.teamLayout.addWidget(self.comboBoxTeam)
         self.teamLayout.addWidget(self.checkBoxLock)
-        #self.teamLayout.addWidget(self.vLine)
+        self.teamLayout.addWidget(self.vLine)
 
         # Add the layout to the widget.
         self.teamWidget.setLayout(self.teamLayout)
+
+        self.comboBoxTeam.activated[str].connect(self.searchNDropInteract)
 
     def teamLockInteract(self):
         """Here is the condition to lock the possibility to change the team name.
@@ -265,10 +243,9 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.searchLabel.setFont(QtGui.QFont('Times', 10))
         # Create the search line editor.
         self.searchLineEdit = QtWidgets.QLineEdit()
-        self.searchLineEdit.setEnabled(False)
         # Create the QtreeView searcher.
         self.searchTreeView = QtWidgets.QTreeView()
-
+        
         self.searchNDropInteract()
 
         # Add the widgets to the searchNDropLayout.
@@ -310,30 +287,44 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.model = QtWidgets.QFileSystemModel(self.searchTreeView)
 
         # Set the root path.
-        root = self.model.setRootPath(self.path)
-
-        self.searchTreeView.setModel(self.model)
-
-        self.searchTreeView.setRootIndex(root)
+        self.model.setRootPath(self.path)
         
-        self.searchTreeView.header().setSectionResizeMode(0,QtWidgets.QHeaderView.ResizeToContents)
-        self.searchTreeView.header().setStretchLastSection(False)
+        self.model.setFilter(QtCore.QDir.NoDotAndDotDot
+            | QtCore.QDir.AllEntries
+            | QtCore.QDir.Files
+            | QtCore.QDir.Dirs)
 
+        if(_IN_MAYA_ == True):
+            self.proxyModel = QtCore.QSortFilterProxyModel(recursiveFilteringEnabled=True,
+            filterRole=QtWidgets.QFileSystemModel.FileNameRole)
+        else:
+            self.proxyModel = QtCore.QSortFilterProxyModel(filterRole=QtWidgets.QFileSystemModel.FileNameRole)
+
+        QtCore.QCoreApplication.processEvents()
+
+        self.proxyModel.setSourceModel(self.model)
+
+        # Set the model, the root index and the drop possibility.
+        self.searchTreeView.setModel(self.proxyModel)
+        
+        self.adjust_root_index()
+        
+        self.searchTreeView.header().setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
         self.searchTreeView.setColumnHidden(1, True)
         self.searchTreeView.setColumnHidden(2, True)
         self.searchTreeView.setColumnHidden(3, True)
         self.searchTreeView.setAcceptDrops(True)
         self.searchTreeView.setDragDropOverwriteMode(True)
         self.searchTreeView.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
+        
+    def adjust_root_index(self):
+        
+        self.rootIndex = self.model.index(self.path)
+        
+        self.proxyIndex = self.proxyModel.mapFromSource(self.rootIndex)
+        
+        self.searchTreeView.setRootIndex(self.proxyIndex)
 
-    def openFiles(self):
-        """This function allows to open a file by Double Clicking in the Treeview.
-        """
-        index = self.searchTreeView.currentIndex()
-
-        filePath = self.model.filePath(index)
-
-        os.startfile(filePath)
 
     def attribUIWidget(self):
         """Creating the attribute Widget.
@@ -352,19 +343,15 @@ class PipelineUI(QtWidgets.QMainWindow):
         # Create the attrib layout.
         self.attribTypeLayout = QtWidgets.QHBoxLayout(self.childWidget2)
         self.attribTypeLayout.setContentsMargins(50, 0, 5, 0)
-        #self.attribTypeLayout.addStretch(1)
 
         self.attribLayout = QtWidgets.QHBoxLayout(self.childWidget2)
         self.attribLayout.setContentsMargins(0, 0, 5, 5)
-        #self.attribLayout.addStretch(1)
 
         self.attribChoiceLayout = QtWidgets.QHBoxLayout(self.childWidget2)
         self.attribChoiceLayout.setContentsMargins(0, 0, 5, 5)
-        #self.attribChoiceLayout.addStretch(2)
 
         self.attribVLayout = QtWidgets.QVBoxLayout(self.childWidget2)
         self.attribVLayout.setContentsMargins(0, 1, 5, 5)
-        #self.attribVLayout.addStretch(1)
 
         # Create and set attribute labels.
         self.attribLabel = QtWidgets.QLabel('Attributes :')
@@ -375,23 +362,22 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.setAttribLabel = QtWidgets.QLabel('Value :')
         self.setAttribLabel.setFixedWidth(50)
 
-        #self.attribLineEdit.setFixedWidth(243)
+        self.attribLineEdit.setFixedWidth(243)
 
         # Create the combo box to choose transform or shape attribute.
-
+        
         self.comboBoxAttribTS.addItem('Shape')
         self.comboBoxAttribTS.addItem('Transform')
 
         # Create the combo box to choose the type of the attribute.
         self.comboBoxAttribType = QtWidgets.QComboBox()
-
         self.comboBoxAttribType.addItem('String')
         self.comboBoxAttribType.addItem('Integer')
         self.comboBoxAttribType.addItem('Float')
 
         # Add widgets to layout and set layout to widgets.
         
-        self.attribTypeLayout.addWidget(self.attribLabel)
+        self.attribTypeLayout.addWidget(self.attribLabel, 0, QtCore.Qt.AlignRight)
         self.attribTypeLayout.addWidget(self.attribTypeLabel, 0, QtCore.Qt.AlignRight)
         self.attribTypeLayout.addWidget(self.attribOnLabel, 0, QtCore.Qt.AlignHCenter)  
 
@@ -420,6 +406,19 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.attribVLayout.addWidget(self.attribWidget)
 
         self.attribVWidget.setLayout(self.attribVLayout)
+
+        # Connect attrib type to attribName line edit.
+    
+    def determineAttribName(self):
+        """Here is a basic automation to define two currently used attributes 'GuerillaTags' and 'variant'
+        when we choose a transform or a shape attribute.
+        """
+
+        self.idx = self.comboBoxAttribTS.currentIndex()
+        if(self.idx == 0):
+            self.attribNameLineEdit.setText('GuerillaTags')
+        else:
+            self.attribNameLineEdit.setText('variant')
     
     def exportUIWidget(self):
         """Creating the export bases widget
@@ -434,8 +433,6 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.exportChild2()
         self.QVLineShape()
         self.vLine.setMinimumHeight(1)
-        self.vLine.setFixedHeight(250)
-
         # Create the main export layout.
         self.exportMainLayout = QtWidgets.QHBoxLayout(self.exportMainWidget)
         self.exportMainLayout.setContentsMargins(0, 0, 5, 0)
@@ -502,21 +499,18 @@ class PipelineUI(QtWidgets.QMainWindow):
 
         # Create the child1 export layout.
         self.exportChildLayout1 = QtWidgets.QVBoxLayout(self.exportChildWidget1)
-        self.exportChildLayout1.setContentsMargins(50, 5, 0, 0)
+        self.exportChildLayout1.setContentsMargins(50, 5, 0, 45)
 
         # Create checkBoxes.
-        self.checkExportMA = QtWidgets.QCheckBox('.ma')
-        self.checkExportMA.setChecked(True)
-        self.checkExportOBJ = QtWidgets.QCheckBox('.obj')
-        self.checkExportOBJ.setChecked(True)
-        self.checkExportABC = QtWidgets.QCheckBox('.abc')
-        self.checkExportABC.setChecked(True)
+        self.checkExportMA = QtWidgets.QCheckBox('.Ma')
+        self.checkExportOBJ = QtWidgets.QCheckBox('.Obj')
+        self.checkExportABC = QtWidgets.QCheckBox('.Abc')
 
         # Add Widgets to the child layouts.
         self.exportChildLayout1.addWidget(self.checkExportMA, 0, QtCore.Qt.AlignHCenter)
         self.exportChildLayout1.addWidget(self.checkExportOBJ, 0, QtCore.Qt.AlignHCenter)
         self.exportChildLayout1.addWidget(self.checkExportABC, 0, QtCore.Qt.AlignHCenter)
-        self.exportChildLayout1.setSpacing(30)
+        self.exportChildLayout1.setSpacing(75)
 
         # Set child layout to child widget.
         self.exportChildWidget1.setLayout(self.exportChildLayout1)
@@ -530,14 +524,17 @@ class PipelineUI(QtWidgets.QMainWindow):
         # Create the child2 export widget.
         self.exportChildWidget2 = QtWidgets.QWidget()
         self.exportLabelHWidget1 = QtWidgets.QWidget()
+        self.stepWidget = QtWidgets.QWidget()
         self.subSWidget = QtWidgets.QWidget()
         # Create the child exports layout.
         self.exportChildLayout2 = QtWidgets.QVBoxLayout(self.exportChildWidget2)
-        self.exportChildLayout2.setContentsMargins(0, 0, 5, 0)
+        self.exportChildLayout2.setContentsMargins(0, 0, 5, 75)
 
         self.exportLabelHLayout1 = QtWidgets.QHBoxLayout(self.exportLabelHWidget1)
-        self.exportLabelHLayout1.setContentsMargins(0, 0, 0, 0)
+        self.exportLabelHLayout1.setContentsMargins(0, 0, 0, 75)
 
+        self.stepLayout = QtWidgets.QHBoxLayout(self.stepWidget)
+        self.stepLayout.setContentsMargins(0, 0, 0, 50)
         self.subSLayout = QtWidgets.QHBoxLayout(self.subSWidget)
         self.subSLayout.setContentsMargins(0, 0, 0, 0)
         # Add widgets to layout.
@@ -546,6 +543,9 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.exportLabelHLayout1.addWidget(self.endLabel)
         self.exportLabelHLayout1.addWidget(self.endLineEdit)
 
+        self.stepLayout.addWidget(self.stepLabel)
+        self.stepLayout.addWidget(self.stepLineEdit)
+
         #self.subSLayout.addWidget(self.subsampleLabel)
         self.subSLayout.addWidget(self.startSubSLineEdit)
         self.subSLayout.addWidget(self.endSubSLineEdit)
@@ -553,12 +553,14 @@ class PipelineUI(QtWidgets.QMainWindow):
         # Add the widgets to the layout.
         self.exportChildLayout2.addWidget(self.alembicOptionsLabel, 0, QtCore.Qt.AlignHCenter)
         self.exportChildLayout2.addWidget(self.exportLabelHWidget1, 0, QtCore.Qt.AlignHCenter)
+        self.exportChildLayout2.addWidget(self.stepWidget, 0, QtCore.Qt.AlignHCenter)
         self.exportChildLayout2.addWidget(self.subsampleLabel, 0, QtCore.Qt.AlignHCenter)
         self.exportChildLayout2.addWidget(self.subSWidget, 0, QtCore.Qt.AlignHCenter)
-        self.exportChildLayout2.setSpacing(0)
+        self.exportChildLayout2.setSpacing(20)
 
         # Set child layout to child widgets.
         self.exportLabelHWidget1.setLayout(self.exportLabelHLayout1)
+        self.stepWidget.setLayout(self.stepLayout)
         self.subSWidget.setLayout(self.subSLayout)
         self.exportChildWidget2.setLayout(self.exportChildLayout2)
 
@@ -573,6 +575,7 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.startLabel = QtWidgets.QLabel('Start :')
         self.endLabel = QtWidgets.QLabel('End :')
 
+        self.stepLabel = QtWidgets.QLabel('Step :')
         self.subsampleLabel = QtWidgets.QLabel('Subsamples :')
 
         # Create the line edits.
@@ -580,10 +583,12 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.startLineEdit.setText('1')
         self.endLineEdit = QtWidgets.QLineEdit()
         self.endLineEdit.setText('1')
+        self.stepLineEdit = QtWidgets.QLineEdit()
+        self.stepLineEdit.setText('1.0')
         self.startSubSLineEdit = QtWidgets.QLineEdit()
-        self.startSubSLineEdit.setText('-0.0')
+        self.startSubSLineEdit.setText('-0.2')
         self.endSubSLineEdit = QtWidgets.QLineEdit()
-        self.endSubSLineEdit.setText('0.0')
+        self.endSubSLineEdit.setText('0.2')
 
     def attribExport(self):
         """This function creates the export attributes widget.
@@ -601,11 +606,15 @@ class PipelineUI(QtWidgets.QMainWindow):
 
         # Create the comboBox.
         self.attribExportLineEdit = QtWidgets.QLineEdit()
-        self.attribExportLineEdit.setText('typeTag,GuerillaTags,variant,id')
+        self.attribExportLineEdit.setText('GuerillaTags,variant')
+
+        # Create the Add Button.
+        self.attribExportButton = QtWidgets.QPushButton('Add')
         
         # Add widgets to the layout.
         self.attribExportLayout.addWidget(self.attribExportLabel)
         self.attribExportLayout.addWidget(self.attribExportLineEdit)
+        self.attribExportLayout.addWidget(self.attribExportButton)
 
         # Set the layout to the widget.
         self.attribExportWidget.setLayout(self.attribExportLayout)
@@ -622,9 +631,11 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.exportButtonLayout = QtWidgets.QHBoxLayout(self.exportButtonWidget)
         self.exportButtonLayout.setSpacing(30)
 
-        # Set the QPushButton widgets size.
-        self.taskPushButton.setFixedSize(self.width/18, self.height/20)
-        self.publishPushButton.setFixedSize(self.width/18, self.height/20)
+        # Create the QPushButton widgets.
+        
+        self.taskPushButton.setFixedSize(250, 100)
+        
+        self.publishPushButton.setFixedSize(250, 100)
 
         # Add the buttons to the layout.
         self.exportButtonLayout.addWidget(self.taskPushButton)
@@ -656,7 +667,7 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.hLine.setFrameShadow(QtWidgets.QFrame.Plain)        
 
     def mayaAttributeCnR(self):
-        """This function allows to set and delete attributes parameters
+        """This function allows to set create, replace and delete attributes parameters
         and call the attributeCreate function from the mayaAttributes.py file.
         mayaAttributeCnR is called by the Create button when he is clicked.
         """
@@ -673,12 +684,10 @@ class PipelineUI(QtWidgets.QMainWindow):
         elif(self.type == 'String'):
             self.type   = 'string'
             self.value  = self.value
-        
+
         else:
             self.type   = 'double'
             self.value  = float(self.value)
-
-        # Call function from mayaAttributes.py
 
         self.mayaAttrib.attributeCreate(name = self.name, value = self.value, type = self.type, on = self.on)
 
@@ -687,7 +696,6 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.name and self.on are re used from the mayaAttributeCnR function just on top.
         mayaAttributeDel is called by the Delete button when he is clicked.
         """
-
         self.name = self.attribNameLineEdit.text()
         self.on = self.comboBoxAttribTS.currentText()
 
@@ -699,43 +707,21 @@ class PipelineUI(QtWidgets.QMainWindow):
 
             querySceneName = cmds.file(query = True, sceneName = True, shortName = True)
             extensionSplit = querySceneName.split('.')
-            sceneNameSplit = extensionSplit[0].split('_')
-            name = '_'.join(sceneNameSplit[:3])
-
-            self.sceneName = ''
-            self.nameSplit = ''
-            self.anmSplit = ''
-            self.assetSplit = ''
-
-            self.sceneNameLineEdit.setPlaceholderText("Untilted Scene !")
-
             if(querySceneName):
-                self.sceneNameLineEdit.setText(name)
+                self.sceneNameLineEdit.setText(extensionSplit[0])
             else:
                 self.sceneNameLineEdit.setPlaceholderText("Untilted Scene !")
 
-            if(self.sceneNameLineEdit.text().startswith('sq')):
-    
-                self.sceneNameLineEdit.setText('anm_' + name)
-
-            if(self.sceneNameLineEdit.text().startswith('anm')):
+            if(extensionSplit[0].startswith('SQ')):
 
                 self.startLineEdit.setText(str(int(cmds.playbackOptions(q=True,min=True))))
                 self.endLineEdit.setText(str(int(cmds.playbackOptions(q=True,max=True))))
 
-                self.sceneName = self.sceneNameLineEdit.text()
-
-                self.nameSplit = name.split('_')
-
     def exportTasks(self):
-        """This function allows to setup and call all Tasks exports part.
-        """
-
-        self.mySel = cmds.ls(sl=True)
-
+        
         self.sceneName = self.sceneNameLineEdit.text()
 
-        self.sceneNameSplit = self.sceneName.split('_')
+        self.nameSplit = self.sceneName.split('SH')
 
         seq     = ''
         shot    = ''
@@ -745,64 +731,71 @@ class PipelineUI(QtWidgets.QMainWindow):
         self.export.getExportPath(self.path)
         self.export.defineItemsTeam(self.comboBoxTeam.currentText())
         
-        if(not self.sceneName.startswith('anm')):       # Anim exports.
+        if(not self.sceneName.startswith('SQ')):
+            
             
             self.export.typeTagAttribCreation('assets')
-            self.export.exportMA(self.checkExportMA, 'tasks', 'assets', 'modeling', None, None, '')
+            self.export.exportMA(self.checkExportMA, 'tasks', 'assets', 'modeling', None, None)
+            self.export.exportOBJ(self.checkExportOBJ, 'tasks', 'assets', 'modeling', None, None)
+            self.export.exportABC(self.checkExportABC, 'tasks', 'assets', self.startLineEdit.text(),
+                self.endLineEdit.text(), self.startSubSLineEdit.text(), self.endSubSLineEdit.text(),
+                self.attribExportLineEdit.text().split(','), 'modeling', None, None)
             
-        else:                                           # Assets exports.
-
+        else:
+            print('Animation export recognized !')
             self.export.typeTagAttribCreation('shots')
             if(self.comboBoxTeam.currentText() == 'IA'):
-                self.export.verifyShotTreeStructure(self.sceneNameSplit[1].upper(), self.sceneNameSplit[2].upper())
-                seq     = self.sceneNameSplit[1]
-                shot    = self.sceneNameSplit[2]
+                self.export.verifyShotTreeStructure(self.nameSplit[0], 'SH' + self.nameSplit[1])
+                seq     = self.nameSplit[0]
+                shot    = 'SH' + self.nameSplit[1]
             elif(self.comboBoxTeam.currentText() == 'LDS'):
-                self.export.verifyShotTreeStructure(self.sceneNameSplit[1].upper(), self.sceneNameSplit[2][2:].upper())
-                seq     = self.sceneNameSplit[1]
-                shot    = self.sceneNameSplit[2][2:]
+                self.export.verifyShotTreeStructure(self.nameSplit[0], self.nameSplit[1])
+                seq     = self.nameSplit[0]
+                shot    = self.nameSplit[1]
 
-            self.export.exportMA(self.checkExportMA, 'tasks', 'shots', 'animation', seq, shot, self.sceneName + '_')
+            self.export.exportMA(self.checkExportMA, 'tasks', 'shots', 'animation', seq, shot)
+
+            self.export.exportABC(self.checkExportABC, 'tasks', 'shots', self.startLineEdit.text(),
+                self.endLineEdit.text(), self.startSubSLineEdit.text(), self.endSubSLineEdit.text(),
+                self.attribExportLineEdit.text().split(','), 'animation', seq, shot)
 
     def exportPublishs(self):
-        """This function allows to setup and call all Publishs exports part.
-        """
-
-        self.mySel = cmds.ls(sl=True)
-
+        
         self.sceneName = self.sceneNameLineEdit.text()
 
-        self.sceneNameSplit = self.sceneName.split('_')
+        self.nameSplit = self.sceneName.split('SH')
 
         seq     = ''
         shot    = ''
 
         self.export = MayaExports()
-        
+
         self.export.getExportPath(self.path)
         self.export.defineItemsTeam(self.comboBoxTeam.currentText())
 
-        if(not self.sceneName.startswith('anm')):       # Anim exports.
+        if(not self.sceneName.startswith('SQ')):
             
             self.export.typeTagAttribCreation('assets')
-
-            self.export.exportOBJ(self.checkExportOBJ, self.checkExportABC, 'publishs', 'assets', 'modeling', None, None, '')
+            self.export.exportMA(self.checkExportMA, 'publishs', 'assets', 'modeling', None, None)
+            self.export.exportOBJ(self.checkExportOBJ, 'publishs', 'assets', 'modeling', None, None)
             self.export.exportABC(self.checkExportABC, 'publishs', 'assets', self.startLineEdit.text(),
                 self.endLineEdit.text(), self.startSubSLineEdit.text(), self.endSubSLineEdit.text(),
-                self.attribExportLineEdit.text().split(','), 'modeling', None, None, '')
+                self.attribExportLineEdit.text().split(','), 'modeling', None, None)
             
-        else:                                           # Asset exports.
-
+        else:
+            print('Animation export recognized !')
             self.export.typeTagAttribCreation('shots')
             if(self.comboBoxTeam.currentText() == 'IA'):
-                self.export.verifyShotTreeStructure(self.sceneNameSplit[1].upper(), self.sceneNameSplit[2].upper())
-                seq     = self.sceneNameSplit[1]
-                shot    = self.sceneNameSplit[2]
+                self.export.verifyShotTreeStructure(self.nameSplit[0], 'SH' + self.nameSplit[1])
+                seq     = self.nameSplit[0]
+                shot    = 'SH' + self.nameSplit[1]
             elif(self.comboBoxTeam.currentText() == 'LDS'):
-                self.export.verifyShotTreeStructure(self.sceneNameSplit[1].upper(), self.sceneNameSplit[2][2:].upper())
-                seq     = self.sceneNameSplit[1]
-                shot    = self.sceneNameSplit[2][2:]
+                self.export.verifyShotTreeStructure(self.nameSplit[0], self.nameSplit[1])
+                seq     = self.nameSplit[0]
+                shot    = self.nameSplit[1]
+
+            self.export.exportMA(self.checkExportMA, 'publishs', 'shots', 'animation', seq, shot)
 
             self.export.exportABC(self.checkExportABC, 'publishs', 'shots', self.startLineEdit.text(),
                 self.endLineEdit.text(), self.startSubSLineEdit.text(), self.endSubSLineEdit.text(),
-                self.attribExportLineEdit.text().split(','), 'animation', seq, shot, self.sceneName + '_')
+                self.attribExportLineEdit.text().split(','), 'animation', seq, shot)
